@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+- New builder method `PrometheusBuilder::build_recorder_install_exporter`, which installs the exporter
+  and returns the builder so the caller can combine the recorder with other recorders.
+
 ## [0.11.0] - 2022-07-20
 
 ### Changed

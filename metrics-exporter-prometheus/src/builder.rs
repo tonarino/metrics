@@ -324,6 +324,27 @@ impl PrometheusBuilder {
     #[cfg(any(feature = "http-listener", feature = "push-gateway"))]
     #[cfg_attr(docsrs, doc(cfg(any(feature = "http-listener", feature = "push-gateway"))))]
     pub fn install(self) -> Result<(), BuildError> {
+        let recorder = self.build_recorder_install_exporter()?;
+
+        metrics::set_boxed_recorder(Box::new(recorder))?;
+
+        Ok(())
+    }
+
+    /// Builds the recorder and exporter. Installs the exporter globally, and returns the
+    /// recorder so the caller can combine it with other recorders.
+    ///
+    /// When called from within a Tokio runtime, the exporter future is spawned directly
+    /// into the runtime.  Otherwise, a new single-threaded Tokio runtime is created
+    /// on a background thread, and the exporter is spawned there.
+    ///
+    /// ## Errors
+    ///
+    /// If there is an error while either building the recorder and exporter, or installing the
+    /// recorder and exporter, an error variant will be returned describing the error.
+    #[cfg(any(feature = "http-listener", feature = "push-gateway"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "http-listener", feature = "push-gateway"))))]
+    pub fn build_recorder_install_exporter(self) -> Result<PrometheusRecorder, BuildError> {
         let recorder = if let Ok(handle) = runtime::Handle::try_current() {
             let (recorder, exporter) = {
                 let _g = handle.enter();
@@ -355,9 +376,7 @@ impl PrometheusBuilder {
             recorder
         };
 
-        metrics::set_boxed_recorder(Box::new(recorder))?;
-
-        Ok(())
+        Ok(recorder)
     }
 
     /// Builds the recorder and installs it globally, returning a handle to it.
